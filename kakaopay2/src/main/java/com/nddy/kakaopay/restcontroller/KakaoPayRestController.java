@@ -1,0 +1,134 @@
+package com.nddy.kakaopay.restcontroller;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import com.nddy.kakaopay.dao.GiftcardDao;
+import com.nddy.kakaopay.dao.PaymentDao;
+import com.nddy.kakaopay.dao.PaymentDetailDao;
+import com.nddy.kakaopay.dto.GiftcardDto;
+import com.nddy.kakaopay.error.TargetNotfoundException;
+import com.nddy.kakaopay.service.KakaoPayService;
+import com.nddy.kakaopay.service.PaymentService;
+import com.nddy.kakaopay.vo.TokenVO;
+import com.nddy.kakaopay.vo.kakaopay.KakaoPayApproveRequestVO;
+import com.nddy.kakaopay.vo.kakaopay.KakaoPayApproveResponseVO;
+import com.nddy.kakaopay.vo.kakaopay.KakaoPayFlashVO;
+import com.nddy.kakaopay.vo.kakaopay.KakaoPayQtyVO;
+import com.nddy.kakaopay.vo.kakaopay.KakaoPayReadyRequestVO;
+import com.nddy.kakaopay.vo.kakaopay.KakaoPayReadyResponseVO;
+import jakarta.servlet.http.HttpServletResponse;
+
+@CrossOrigin
+@RestController
+@RequestMapping("/kakaopay")
+public class KakaoPayRestController {
+	@Autowired
+	private KakaoPayService kakaoPayService;
+	@Autowired
+	private GiftcardDao giftcardDao;
+	@Autowired
+	private PaymentService paymentService;
+	@Autowired
+	private PaymentDao paymentDao;
+	@Autowired
+	private PaymentDetailDao paymentDetailDao;
+
+	private Map<String, KakaoPayFlashVO> flashMap = Collections.synchronizedMap(new HashMap<>());
+
+	@PostMapping("/buy")
+	public KakaoPayReadyResponseVO buy(
+			@RequestBody List<KakaoPayQtyVO> qtyList,
+			@RequestHeader("Frontend-Url") String frontendUrl,
+			@RequestAttribute TokenVO tokenVO) {
+		if (qtyList == null || qtyList.isEmpty())
+			throw new TargetNotfoundException();
+
+		StringBuffer buffer = new StringBuffer();
+		int total = 0;
+		for (KakaoPayQtyVO qtyVO : qtyList) {
+			GiftcardDto giftcardDto = giftcardDao.selectOne(qtyVO.getNo());
+			if (buffer.isEmpty()) {
+				buffer.append(giftcardDto.getGiftcardName());
+			}
+			total += giftcardDto.getGiftcardPrice() * qtyVO.getQty();
+		}
+
+		if (qtyList.size() >= 2) {
+			buffer.append(" 외 ");
+			buffer.append(qtyList.size() - 1);
+			buffer.append("건");
+		}
+
+		KakaoPayReadyRequestVO requestVO = KakaoPayReadyRequestVO.builder()
+				.partnerOrderId(UUID.randomUUID().toString())
+				.partnerUserId(tokenVO.getLoginId())
+				.itemName(buffer.toString())// 상품명
+				.totalAmount(total)
+				.build();
+
+		KakaoPayReadyResponseVO responseVO = kakaoPayService.ready(requestVO);
+
+		flashMap.put(
+				requestVO.getPartnerOrderId(),
+				KakaoPayFlashVO.builder()
+						.partnerOrderId(requestVO.getPartnerOrderId())
+						.partnerUserId(requestVO.getPartnerUserId())
+						.tid(responseVO.getTid())
+						.returnUrl(frontendUrl)
+						.qtyList(qtyList)
+						.build());
+
+		// [4] 결과를 반환한다
+		return responseVO;
+	}
+
+	@GetMapping("/buy/success/{partnerOrderId}")
+	public void success(@PathVariable String partnerOrderId,
+			@RequestParam("pg_token") String pgToken,
+			HttpServletResponse response) throws IOException {
+
+		KakaoPayFlashVO flashVO = flashMap.remove(partnerOrderId);
+
+		KakaoPayApproveRequestVO requestVO = KakaoPayApproveRequestVO.builder()
+				.partnerOrderId(flashVO.getPartnerOrderId())
+				.partnerUserId(flashVO.getPartnerUserId())
+				.tid(flashVO.getTid())
+				.pgToken(pgToken)
+				.build();
+
+		KakaoPayApproveResponseVO responseVO = kakaoPayService.approve(requestVO);
+
+		paymentService.insert(responseVO, flashVO);
+
+		response.sendRedirect(flashVO.getReturnUrl() + "/success");
+	}
+
+	@GetMapping("/buy/cancel/{partnerOrderId}")
+	public void cancel(@PathVariable String partnerOrderId,
+			HttpServletResponse response) throws IOException {
+		KakaoPayFlashVO flashVO = flashMap.remove(partnerOrderId);
+		response.sendRedirect(flashVO.getReturnUrl() + "/cancel");
+	}
+
+	@GetMapping("/buy/fail/{partnerOrderId}")
+	public void fail(@PathVariable String partnerOrderId,
+			HttpServletResponse response) throws IOException {
+		KakaoPayFlashVO flashVO = flashMap.remove(partnerOrderId);
+		response.sendRedirect(flashVO.getReturnUrl() + "/fail");
+	}
+}
