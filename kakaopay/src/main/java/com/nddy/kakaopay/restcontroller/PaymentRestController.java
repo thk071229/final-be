@@ -62,13 +62,18 @@ public class PaymentRestController {
 
 	@Operation(summary = "카카오페이 내 결제내역 상세 조회", description = "KakaoPay-List-PaymentDetailDto")
 	@GetMapping("/{paymentNo}")
-	public PaymentInfoVO detail(@PathVariable long paymentNo,
-			@RequestAttribute TokenVO tokenVO) {
+	public PaymentInfoVO detail(@PathVariable long paymentNo/*,
+			@RequestAttribute TokenVO tokenVO*/) {
+		TokenVO tokenVO2 = TokenVO.builder()
+				.loginId("nodvic")
+				.loginLevel("일반회원")
+				.build();
+		
 		PaymentDto paymentDto = paymentDao.selectOne(paymentNo);
 		if (paymentDto == null)
 			throw new TargetNotfoundException();
 
-		boolean isOwner = paymentDto.getPaymentOwner().equals(tokenVO.getLoginId());
+		boolean isOwner = paymentDto.getPaymentOwner().equals(tokenVO2.getLoginId());
 		if (isOwner == false)
 			throw new NeedPermissionException();
 
