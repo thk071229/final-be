@@ -1,4 +1,4 @@
-package com.kh.maproot.restController;
+package com.kh.maproot.restcontroller;
 
 import java.util.List;
 import java.util.Map;
