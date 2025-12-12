@@ -14,18 +14,22 @@ public class InterceptorConfiguration implements WebMvcConfigurer{
 	private TokenRenewalInterceptor tokenRenewalInterceptor;
 	
 	@Override
-	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(accountInterceptor)
-					.addPathPatterns(
-						"/account/**"
-					)
-					.excludePathPatterns(
-						"/account/join",
-						"/account/login",
-						"/account/refresh"
-					);
-		registry.addInterceptor(tokenRenewalInterceptor)
-					.addPathPatterns("/**");//모든 주소
-	}
-
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(accountInterceptor)
+                    .addPathPatterns(
+                        "/account/logout",
+                        "/chat/**"
+                    )
+                    .excludePathPatterns(
+                        
+                    );
+        registry.addInterceptor(tokenRenewalInterceptor)
+                    .addPathPatterns("/**")
+                    .excludePathPatterns(
+                            "/account/refresh",
+                            "/account/join",
+                            "/account/login",
+                            "/account/logout"
+                            );
+    }
 }

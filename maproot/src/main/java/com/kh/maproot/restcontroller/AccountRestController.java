@@ -3,19 +3,25 @@ package com.kh.maproot.restcontroller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.maproot.dao.AccountDao;
+import com.kh.maproot.dao.RefreshTokenDao;
 import com.kh.maproot.dto.AccountDto;
 import com.kh.maproot.error.TargetNotfoundException;
+import com.kh.maproot.error.UnauthorizationException;
 import com.kh.maproot.service.AccountService;
-import com.kh.maproot.service.CertService;
 import com.kh.maproot.service.TokenService;
 import com.kh.maproot.vo.AccountLoginResponseVO;
+import com.kh.maproot.vo.AccountRefreshVO;
+import com.kh.maproot.vo.TokenVO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,6 +29,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "회원 관리 컨트롤러")
 @CrossOrigin
@@ -38,6 +45,8 @@ public class AccountRestController {
 	private TokenService tokenService;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+	@Autowired
+	private RefreshTokenDao refreshTokenDao;
 	
 	@Operation(
 			summary = "신규 회원 가입", // [1] 짧은 제목
@@ -68,8 +77,20 @@ public class AccountRestController {
 		)
 	// 회원가입
 	@PostMapping("/join")
-	public void insert(AccountDto accountDto) {
+	public void insert(@Valid @RequestBody AccountDto accountDto) {
 		accountService.join(accountDto);
+	}
+	// 아이디 중복검사
+	@GetMapping("/accountId/{accountId}")
+	public boolean checkAccountId(@PathVariable String accountId) {
+		int count = accountDao.countByAccountId(accountId);
+		return count == 0;
+	}
+	// 닉네임 중복검사
+	@GetMapping("/accountNickname/{accountNickname}")
+	public boolean checkAccountNickname(@PathVariable String accountNickname) {
+		int count = accountDao.countByAccountNickname(accountNickname);
+		return count == 0;
 	}
 	
 	@Operation(
@@ -115,6 +136,31 @@ public class AccountRestController {
 				.accessToken(tokenService.generateAccessToken(findDto))//액세스토큰
 				.refreshToken(tokenService.generateRefreshToken(findDto))//갱신토큰
 			.build();
+	}
+	// 토큰 갱신
+	@PostMapping("/refresh")
+	public AccountLoginResponseVO refresh(@RequestBody AccountRefreshVO accountRefreshVO) {
+		String refreshToken = accountRefreshVO.getRefreshToken();
+		if(refreshToken == null || refreshToken.isEmpty())
+			throw new UnauthorizationException();
+		
+		TokenVO tokenVO = tokenService.parse(refreshToken);
+		
+		boolean isValid = tokenService.checkRefreshToken(tokenVO, refreshToken);
+		if(!isValid) throw new TargetNotfoundException();
+		
+		// 재생성 후 반환
+		return AccountLoginResponseVO.builder()
+					.loginId(tokenVO.getLoginId())
+					.loginLevel(tokenVO.getLoginLevel())
+					.accessToken(tokenService.generateAccessToken(tokenVO))
+				.build();
+	}
+	// 로그아웃
+	@DeleteMapping("/logout")
+	public void logout(@RequestHeader("Authorization") String bearerToken) {
+		TokenVO tokenVO = tokenService.parse(bearerToken);
+		refreshTokenDao.deleteByTarget(tokenVO.getLoginId());
 	}
 	
 	
