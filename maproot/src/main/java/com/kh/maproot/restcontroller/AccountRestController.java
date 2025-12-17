@@ -3,10 +3,13 @@ package com.kh.maproot.restcontroller;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -87,10 +90,8 @@ public class AccountRestController {
 		)
 	// 회원가입
 	@PostMapping("/join")
-	public void insert(@RequestBody AccountDto accountDto,
-			@RequestParam MultipartFile attach) throws IllegalStateException, IOException {
-		log.debug("acc = {}", accountDto);
-		log.debug("attach = {}", attach);
+	public void insert(@ModelAttribute AccountDto accountDto,
+			@RequestParam(required = false) MultipartFile attach) throws IllegalStateException, IOException {
 		accountService.join(accountDto, attach);
 	}
 	// 아이디 중복검사
