@@ -87,8 +87,8 @@ public class AccountRestController {
 		)
 	// 회원가입
 	@PostMapping("/join")
-	public void insert(@RequestPart AccountDto accountDto,
-			@RequestPart MultipartFile attach) throws IllegalStateException, IOException {
+	public void insert(@RequestBody AccountDto accountDto,
+			@RequestParam MultipartFile attach) throws IllegalStateException, IOException {
 		log.debug("acc = {}", accountDto);
 		log.debug("attach = {}", attach);
 		accountService.join(accountDto, attach);
