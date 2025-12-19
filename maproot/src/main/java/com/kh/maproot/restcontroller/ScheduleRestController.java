@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,14 +19,17 @@ import com.kh.maproot.dao.ScheduleDao;
 import com.kh.maproot.dao.ScheduleMemberDao;
 import com.kh.maproot.dao.ScheduleTagDao;
 import com.kh.maproot.dao.ScheduleUnitDao;
+import com.kh.maproot.dao.ShareLinkDao;
 import com.kh.maproot.dao.TagDao;
 import com.kh.maproot.dto.ScheduleDto;
 import com.kh.maproot.dto.ScheduleMemberDto;
 import com.kh.maproot.dto.ScheduleTagDto;
 import com.kh.maproot.dto.ScheduleUnitDto;
+import com.kh.maproot.dto.ShareLinkDto;
 import com.kh.maproot.dto.TagDto;
 import com.kh.maproot.schedule.vo.ScheduleCreateRequestVO;
 import com.kh.maproot.schedule.vo.ScheduleListResponseVO;
+import com.kh.maproot.service.TokenService;
 
 @CrossOrigin
 @RestController
@@ -42,6 +46,10 @@ public class ScheduleRestController {
 	private ScheduleMemberDao scheduleMemberDao;
 	@Autowired
 	private ScheduleUnitDao scheduleUnitDao;
+	@Autowired
+	private TokenService tokenService;
+	@Autowired
+	private ShareLinkDao shareLinkDao;
 	
 	@GetMapping("/tagList")
 	public List<TagDto> tagList() {
@@ -134,6 +142,29 @@ public class ScheduleRestController {
 	@GetMapping("/memberList/{scheduleNo}")
 	public List<ScheduleMemberDto> selectMemberList(@PathVariable int scheduleNo) {
 		return scheduleMemberDao.selectByScheduleNo(scheduleNo);
+	}
+	
+	//일정 공유
+	@GetMapping("/share/{scheduleNo}")
+	public String shareSchedule(@PathVariable int scheduleNo) {
+//	랜덤한 shareKey 생성 (UUID, SecureRandom 등)
+	String shareKey = UUID.randomUUID().toString();
+	System.out.println("shareKey : "+shareKey);
+//	만료 시간 계산 (예: +7일)
+	LocalDateTime expireTime = LocalDateTime.now().plusDays(7);
+	System.out.println("expireTime : " + expireTime);
+		
+//	share_link 테이블에 insert
+	ShareLinkDto shareLinkDto = ShareLinkDto.builder()
+			.shareKey(shareKey)
+			.targetScheduleNo(scheduleNo)
+			.expireTime(expireTime)
+			.build();
+			
+	shareLinkDao.insert(shareLinkDto);
+		
+//	생성된 shareKey 반환
+		return shareKey;
 	}
 
 
