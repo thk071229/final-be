@@ -47,6 +47,7 @@ public class ScheduleDao {
 		params.put("attachmentNo", attachmentNo);
 		sqlSession.insert("schedule.connect", params);
 	}
+	
 	public Long findAttach(Long scheduleNo) {
 		return sqlSession.selectOne("schedule.findAttach", scheduleNo);
 	}
@@ -54,6 +55,18 @@ public class ScheduleDao {
 	public List<ScheduleListResponseVO> selectScheduleList(String accountId) {
 	    return sqlSession.selectList("schedule.selectScheduleList", accountId);
 	}
-	
 
-}
+	public String selectByOwner(Long scheduleNo) {
+		return sqlSession.selectOne("schedule.selectByOwner", scheduleNo);
+	}
+
+	public int updateSchedulePublic(Long scheduleNo, String schedulePublic) {
+	    Map<String, Object> param = new HashMap<>();
+	    param.put("scheduleNo", scheduleNo);
+	    param.put("schedulePublic", schedulePublic); // "Y" or "N"
+	    return sqlSession.update("schedule.updateSchedulePublic", param);
+	}
+	}
+	
+	
+	

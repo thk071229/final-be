@@ -127,6 +127,16 @@
         </where>
         ORDER BY S.schedule_no DESC
     </select>
+	<select id="selectByOwner" resultType="ScheduleDto">
+		select * from schedule
+		where schedule_owner = #{scheduleOwner}
+	</select>
+
+<update id="updateSchedulePublic">
+  update schedule
+  set schedule_public = #{schedulePublic}
+  where schedule_no = #{scheduleNo}
+</update>
 
 
 
