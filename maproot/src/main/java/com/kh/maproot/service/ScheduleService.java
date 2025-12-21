@@ -122,7 +122,7 @@ public class ScheduleService {
 			String dayKey = String.valueOf(unit.getScheduleUnitDay());
 			daysMap.computeIfAbsent(dayKey, k -> KakaoMapDaysDto.builder()
 						.markerIds(new ArrayList<>())
-						.routes(new ArrayList<>())
+						.routes(new HashMap<>())
 					.build());
 			daysMap.get(dayKey).getMarkerIds().add(unit.getScheduleKey());
 		}
@@ -132,17 +132,30 @@ public class ScheduleService {
 	        String dayKey = String.valueOf(route.getScheduleUnitDay());
 	        
 	        if (daysMap.containsKey(dayKey)) {
-	            // 리액트에서 사용하던 경로 데이터 구조로 변환
-	        	KakaoMapRoutesDto routeDto = KakaoMapRoutesDto.builder()
+	            KakaoMapDaysDto dayDto = daysMap.get(dayKey);
+	            
+	            // 중첩 맵 구조 확보 (Type -> Priority -> List)
+	            String type = route.getScheduleRouteType();         // CAR, WALK
+	            String priority = route.getScheduleRoutePriority(); // RECOMMEND, TIME, DISTANCE
+	            
+	            // Type 맵 확보
+	            Map<String, List<KakaoMapRoutesDto>> typeMap = 
+	                dayDto.getRoutes().computeIfAbsent(type, k -> new HashMap<>());
+	            
+	            // Priority 리스트 확보
+	            List<KakaoMapRoutesDto> routeListForPriority = 
+	                typeMap.computeIfAbsent(priority, k -> new ArrayList<>());
+
+	            // DTO 생성 (내부 필드에서 type, priority가 제거되었다면 제외)
+	            KakaoMapRoutesDto routeDto = KakaoMapRoutesDto.builder()
 	                .routeKey(route.getScheduleRouteKey())
-	                .priority(route.getScheduleRoutePriority()) // RECOMMEND, TIME, DISTANCE
-	                .type(route.getScheduleRouteType())         // CAR, WALK
 	                .distance(route.getScheduleRouteDistance())
 	                .duration(route.getScheduleRouteTime())
-	                .linepath(convertGeomToList(route.getScheduleRouteGeom())) // 이미 파싱된 JSON 또는 문자열
+	                .linepath(convertGeomToList(route.getScheduleRouteGeom()))
 	                .build();
 	            
-	        	daysMap.get(dayKey).getRoutes().add(routeDto);
+	            // 최종 리스트에 추가
+	            routeListForPriority.add(routeDto);
 	        }
 	    }
 		KakaoMapDataDto data = KakaoMapDataDto.builder()
