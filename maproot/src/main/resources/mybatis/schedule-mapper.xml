@@ -74,11 +74,15 @@
 	</select>
 	
 	<!-- 일정 조회 통합 -->
-	 <select id="selectScheduleList" resultType="com.kh.maproot.schedule.vo.ScheduleListResponseVO">
+	 <select id="selectScheduleList" resultType="ScheduleListResponseVO">
         SELECT 
             S.schedule_no, 
             S.schedule_name, 
-            S.schedule_state, 
+            CASE 
+                WHEN SYSDATE &lt; S.schedule_start_date THEN '약속전'
+                WHEN SYSDATE &gt; S.schedule_end_date THEN '종료'
+                ELSE '진행중'
+            END AS scheduleState,   
             S.schedule_public, 
             S.schedule_start_date, 
             S.schedule_end_date, 

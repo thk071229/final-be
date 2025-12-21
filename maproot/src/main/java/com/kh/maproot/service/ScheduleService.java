@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Struct;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,11 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.kh.maproot.dao.AccountDao;
 import com.kh.maproot.dao.ScheduleDao;
 import com.kh.maproot.dao.ScheduleMemberDao;
 import com.kh.maproot.dao.ScheduleRouteDao;
 import com.kh.maproot.dao.ScheduleTagDao;
 import com.kh.maproot.dao.ScheduleUnitDao;
+import com.kh.maproot.dto.AccountDto;
 import com.kh.maproot.dto.ScheduleDto;
 import com.kh.maproot.dto.ScheduleMemberDto;
 import com.kh.maproot.dto.ScheduleRouteDto;
@@ -54,6 +55,8 @@ public class ScheduleService {
 	private ScheduleRouteDao scheduleRouteDao;
 	@Autowired
 	private AttachmentService attachmentService;
+	@Autowired
+	private AccountDao accountDao;
 	
 	@Transactional
 	public ScheduleDto insert(ScheduleCreateRequestVO scheduleVO, MultipartFile attach) throws IllegalStateException, IOException {
@@ -80,11 +83,19 @@ public class ScheduleService {
 				
 				//맴버 테이블에도 추가
 				
+				AccountDto accountDto = accountDao.selectOne(scheduleVO.getScheduleOwner());
+
+				accountDto.setAttachmentNo(
+						accountDto.getAttachmentNo() != null && accountDto.getAttachmentNo() > 0
+					        ? accountDto.getAttachmentNo()
+					        : null
+					);
+				
 				ScheduleMemberDto scheduleMemberDto = ScheduleMemberDto.builder()
 						.scheduleNo(sequence)
-						.accountId("testuser1")
-						.scheduleMemberNickname("테스트유저1")
-						.scheduleMemberRole("member")
+						.accountId(accountDto.getAccountId())
+						.scheduleMemberNickname(accountDto.getAccountNickname())
+						.scheduleMemberRole("owner")
 						.scheduleMemberNotify("Y")
 					.build();
 				
