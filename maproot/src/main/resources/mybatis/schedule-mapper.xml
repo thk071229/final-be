@@ -78,6 +78,44 @@
 		select * from schedule 
 		where schedule_public = 'Y' order by schedule_no desc
 	</select>
+	<!-- 관리자용 전체 일정 -->
+	<select id="selectAllListForAdmin" resultType="ScheduleDto">
+		select * from schedule 
+		order by schedule_no desc
+	</select>
+	
+	
+	<select id="countForSearch" resultType="int">
+	    SELECT count(*) FROM schedule
+	    <where>
+	        <if test="search.keyword != null and search.keyword != ''">
+	            AND (schedule_name LIKE '%' || #{search.keyword} || '%' 
+	                 OR schedule_owner LIKE '%' || #{search.keyword} || '%')
+	        </if>
+	        <if test="search.schedulePublic != null and search.schedulePublic != 'ALL'">
+	            AND schedule_public = #{search.schedulePublic}
+	        </if>
+	    </where>
+	</select>
+	
+	<select id="selectListForSearch" resultType="ScheduleDto">
+	    SELECT * FROM (
+	        SELECT rownum rn, tmp.* FROM (
+	            SELECT * FROM schedule
+	            <where>
+	                <if test="search.keyword != null and search.keyword != ''">
+	                    AND (schedule_name LIKE '%' || #{search.keyword} || '%' 
+	                         OR schedule_owner LIKE '%' || #{search.keyword} || '%')
+	                </if>
+	                <if test="search.schedulePublic != null and search.schedulePublic != 'ALL'">
+	                    AND schedule_public = #{search.schedulePublic}
+	                </if>
+	            </where>
+	            ORDER BY schedule_no DESC
+	        ) tmp
+	    ) 
+	    WHERE rn BETWEEN #{page.begin} AND #{page.end}
+	</select>
 
 
 

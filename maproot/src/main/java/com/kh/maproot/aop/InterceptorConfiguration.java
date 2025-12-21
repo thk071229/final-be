@@ -28,7 +28,8 @@ public class InterceptorConfiguration implements WebMvcConfigurer{
                          "/message/**",
                         "/kakaoMap/**",
                          "/account/withdraw",
-                         "/schedule/insert"
+                         "/schedule/insert",
+                         "/admin/**"
                     )
                     .excludePathPatterns(
 
