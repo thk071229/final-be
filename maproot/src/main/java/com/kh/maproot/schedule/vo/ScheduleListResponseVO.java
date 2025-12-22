@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 public class ScheduleListResponseVO {
 	
 	
-	
-	
 	  private Long scheduleNo;
 	  private String scheduleName;
 	  private String scheduleState;   // open/close/progress
@@ -34,6 +32,9 @@ public class ScheduleListResponseVO {
 	  
 	  // 태그 추가
 	  private String tags;
+	  
+	  // 좋아요 추가
+	  private int scheduleLikeCount;
 	  
     
 }

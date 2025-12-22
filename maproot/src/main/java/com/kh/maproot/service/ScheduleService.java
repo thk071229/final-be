@@ -71,6 +71,7 @@ public class ScheduleService {
 								.scheduleWtime(LocalDateTime.now())
 								.scheduleStartDate(scheduleVO.getScheduleStartDate())
 								.scheduleEndDate(scheduleVO.getScheduleEndDate())
+								.schedulePublic(scheduleVO.getSchedulePublic())
 								.build();
 				
 				Long sequence = scheduleDao.insert(scheduleDto);

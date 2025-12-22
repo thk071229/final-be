@@ -9,7 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.maproot.dao.AccountDao;
+import com.kh.maproot.dao.AccountLikeDao;
+import com.kh.maproot.dao.ScheduleDao;
 import com.kh.maproot.dto.AccountDto;
+import com.kh.maproot.dto.ScheduleDto;
 import com.kh.maproot.error.NeedPermissionException;
 import com.kh.maproot.error.TargetAlreadyExistsException;
 import com.kh.maproot.error.TargetNotfoundException;
@@ -28,6 +31,10 @@ public class AccountService {
 	private PasswordEncoder passwordEncoder;
 	@Autowired
 	private AttachmentService attachmentService;
+	@Autowired
+	private AccountLikeDao accountLikeDao;
+	@Autowired
+	private ScheduleDao scheduleDao;
 	// 회원가입을 위한 서비스
 	@Transactional
 	public void join(AccountDto accountDto, MultipartFile attach) throws IllegalStateException, IOException {
@@ -83,6 +90,31 @@ public class AccountService {
 		
 		return true;
 	}
+	
+	// 회원의 일정 좋아요
+	@Transactional
+	public int toggleSchedulelike(String accountId, Long scheduleNo) {
+	    // 1. 사용자 확인
+	    AccountDto accountDto = accountDao.selectOne(accountId);
+	    if(accountDto == null) throw new TargetNotfoundException("회원이 존재하지 않습니다");
+	    
+	    // 2. 스케줄 확인
+	    ScheduleDto scheduleDto = scheduleDao.selectByScheduleNo(scheduleNo);
+	    if(scheduleDto == null) throw new TargetNotfoundException("존재하지 않는 일정");
+	    
+	    // 3. 이미 좋아요 했는지 확인 및 토글
+	    boolean isChecked = accountLikeDao.check(accountId, scheduleNo);
+	    if(isChecked) {
+	        accountLikeDao.delete(accountId, scheduleNo); // 삭제
+	    } else {
+	        accountLikeDao.insert(accountId, scheduleNo); // 추가
+	    }
+
+	    // [핵심] 4. 변경된 후의 '총 좋아요 개수'를 조회해서 반환 (return)
+	    // DAO에 scheduleNo에 해당하는 좋아요 개수를 세는 메서드(count)가 필요합니다.
+	    return accountLikeDao.countLikes(scheduleNo);
+	}
+	
 	
 	@Transactional
 	public boolean dropAdmin(String accountId, TokenVO tokenVO) {

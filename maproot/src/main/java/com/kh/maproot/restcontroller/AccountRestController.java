@@ -22,10 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.maproot.dao.AccountDao;
+import com.kh.maproot.dao.AccountLikeDao;
 import com.kh.maproot.dao.RefreshTokenDao;
 import com.kh.maproot.dto.AccountDto;
 import com.kh.maproot.error.TargetNotfoundException;
 import com.kh.maproot.error.UnauthorizationException;
+import com.kh.maproot.schedule.vo.ScheduleListResponseVO;
 import com.kh.maproot.service.AccountService;
 import com.kh.maproot.service.AttachmentService;
 import com.kh.maproot.service.TokenService;
@@ -237,6 +239,15 @@ public class AccountRestController {
 		accountService.drop(loginId, rawPassword);
 	}
 	
+	// 회원의 일정 좋아요 토글
+	@PostMapping("/scheduleLike/{scheduleNo}")
+	public int toggleScheduleLike( // void -> int 로 변경
+	        @RequestAttribute TokenVO tokenVO,
+	        @PathVariable Long scheduleNo) {
+	    String loginId = tokenVO.getLoginId();
+	    
+	    // 서비스 메서드가 토글 수행 후 '전체 좋아요 개수'를 반환하도록 호출
+	    return accountService.toggleSchedulelike(loginId, scheduleNo);
 	@PostMapping("/dropAdmin")
 	public void dropAdmin(
 			@RequestAttribute TokenVO tokenVO,
