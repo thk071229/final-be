@@ -51,6 +51,7 @@ public class ScheduleDao {
 		params.put("attachmentNo", attachmentNo);
 		sqlSession.insert("schedule.connect", params);
 	}
+	
 	public Long findAttach(Long scheduleNo) {
 		return sqlSession.selectOne("schedule.findAttach", scheduleNo);
 	}
@@ -71,18 +72,15 @@ public class ScheduleDao {
 	    params.put("search", searchVO);
 	    params.put("page", pageVO);
 	    
-	    // 이제 XML에서 #{search.keyword}, #{page.begin} 등으로 접근 가능합니다.
 	    return sqlSession.selectList("schedule.selectListForSearch", params);
 	}
 
 	// 2. 카운트 조회
 	public int countForSearch(ScheduleSearchVO searchVO, TokenVO tokenVO) {
-	    // 권한 체크
 	    if (tokenVO == null || !tokenVO.getLoginLevel().equals("관리자")) {
 	        throw new NeedPermissionException();
 	    }
 	    
-	    // 카운트도 검색 조건(keyword 등)에 영향을 받으므로 searchVO를 넘겨야 합니다.
 	    Map<String, Object> params = new HashMap<>();
 	    params.put("search", searchVO);
 	    
@@ -90,4 +88,17 @@ public class ScheduleDao {
 	}
 	
 
-}
+	public String selectByOwner(Long scheduleNo) {
+		return sqlSession.selectOne("schedule.selectByOwner", scheduleNo);
+	}
+
+	public int updateSchedulePublic(Long scheduleNo, String schedulePublic) {
+	    Map<String, Object> param = new HashMap<>();
+	    param.put("scheduleNo", scheduleNo);
+	    param.put("schedulePublic", schedulePublic); // "Y" or "N"
+	    return sqlSession.update("schedule.updateSchedulePublic", param);
+	}
+	}
+	
+	
+	
