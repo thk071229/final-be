@@ -15,6 +15,7 @@ public class ScheduleCreateRequestVO {
 
     private String scheduleName; 
     private String scheduleOwner;
+    private String schedulePublic;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime scheduleStartDate;
