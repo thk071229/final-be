@@ -90,6 +90,12 @@
   where schedule_no = #{scheduleNo}
 </update>
 
+  <update id="updateScheduleState">
+    update schedule
+    set schedule_state = #{scheduleState}
+    where schedule_no = #{scheduleNo}
+  </update>
+
 
 
 </mapper>

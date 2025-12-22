@@ -49,6 +49,7 @@ import com.kh.maproot.schedule.vo.ScheduleCreateRequestVO;
 import com.kh.maproot.schedule.vo.ScheduleInsertDataWrapperVO;
 import com.kh.maproot.schedule.vo.ScheduleListResponseVO;
 import com.kh.maproot.schedule.vo.SchedulePublicUpdateRequestVO;
+import com.kh.maproot.schedule.vo.ScheduleStateResponseVO;
 import com.kh.maproot.service.TokenService;
 import com.kh.maproot.service.EmailService;
 import com.kh.maproot.service.ScheduleService;
@@ -147,5 +148,13 @@ public class ScheduleRestController {
 		System.out.println("숫자확인"+vo);
         scheduleService.updateSchedulePublic(vo.getScheduleNo(), vo.isSchedulePublic());
         return ResponseEntity.noContent().build();
+    }
+	
+    @PatchMapping("/{scheduleNo}/state")
+    public ResponseEntity<ScheduleStateResponseVO> refreshScheduleState(@PathVariable Long scheduleNo) {
+    	ScheduleStateResponseVO vo = scheduleService.refreshStateByNow(scheduleNo);
+    	System.out.println("[state] systemZone=" + java.time.ZoneId.systemDefault());
+    	System.out.println("[state] now=" + java.time.LocalDateTime.now());
+    	return ResponseEntity.ok(vo);
     }
 }
