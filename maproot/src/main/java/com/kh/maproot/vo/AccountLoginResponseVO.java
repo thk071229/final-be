@@ -12,5 +12,4 @@ public class AccountLoginResponseVO {
 	private String loginLevel;//로그인한 사용자의 등급
 	private String accessToken;//나중에 사용자가 들고올 접근 토큰
 	private String refreshToken;//accessToken에 문제가 있을 때 갱신할 토큰
-
 }
